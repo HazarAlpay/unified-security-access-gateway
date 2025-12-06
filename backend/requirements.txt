@@ -4,7 +4,12 @@ sqlalchemy
 pydantic
 python-multipart
 pyjwt
-passlib[bcrypt]
+passlib
+bcrypt==3.2.2
 pyotp
 faker
-
+bleach
+requests
+python-dotenv
+google-generativeai
+slowapi

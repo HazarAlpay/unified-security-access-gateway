@@ -57,6 +57,8 @@ class AccessLog(Base):
     action = Column(String(50), nullable=False)
     status = Column(String(20), nullable=False)
     risk_score = Column(Integer, default=0, nullable=False)
+    likelihood = Column(Integer, default=1, nullable=False)
+    impact = Column(Integer, default=1, nullable=False)
     investigation_status = Column(String(20), default="NEW", nullable=False)
     log_metadata = Column(JSON, nullable=True)
     user = relationship("User", back_populates="access_logs")

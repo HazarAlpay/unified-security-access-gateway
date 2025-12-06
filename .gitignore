@@ -47,7 +47,5 @@ logs/
 Thumbs.db
 
 # Sensitive files
-seed.py
-seed_portfolio.py
 *secret*
 *password*

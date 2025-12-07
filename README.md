@@ -111,28 +111,16 @@ Strict separation between user roles prevents unauthorized lateral movement:
 
 Replaces arbitrary scoring systems with the official **NIST SP 800-30** Risk Assessment Framework:
 
-
-
 **Formula:** `Risk Score = Likelihood (1-5) × Impact (1-5)`
-
-
 
 **Score Range:** 1-25
 
-
-
 | Likelihood | Impact | Risk Score | Severity |
-
-|------------|--------|------------|----------|
-
+| :--- | :--- | :---: | :--- |
 | 1 (Rare) | 1 (Negligible) | 1 | Very Low |
-
 | 3 (Possible) | 3 (Moderate) | 9 | Moderate |
-
 | 4 (Likely) | 4 (Major) | 16 | High |
-
 | 5 (Almost Certain) | 5 (Critical) | 25 | Critical |
-
 
 
 **Examples:**

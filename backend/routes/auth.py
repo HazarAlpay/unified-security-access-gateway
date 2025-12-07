@@ -234,53 +234,69 @@ async def login(
 
     # Verify CAPTCHA if required
     if captcha_required:
-        if not credentials.captcha_token:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail={"message": "Too many failed attempts", "captcha_required": True}
+        # If RECAPTCHA_SECRET_KEY is not configured, skip verification (for development/testing)
+        if not RECAPTCHA_SECRET_KEY:
+            print("⚠️  WARNING: RECAPTCHA_SECRET_KEY not configured. Skipping captcha verification.")
+            # Log that captcha was required but skipped
+            await log_event(
+                db=db,
+                user_id=user.id if user else None,
+                ip=ip_address,
+                action="CAPTCHA_SKIP",
+                status="WARNING",
+                risk_score=15,
+                details={"reason": "captcha_not_configured", "user_agent": user_agent},
             )
-        
-        # Verify Captcha
-        print("Verifying Captcha Token...")
-        masked_secret = RECAPTCHA_SECRET_KEY[:5] + "..." if RECAPTCHA_SECRET_KEY else "None"
-        print(f"Secret Key Loaded: {masked_secret}")
-        
-        try:
-            response = requests.post(
-                "https://www.google.com/recaptcha/api/siteverify",
-                data={
-                    "secret": RECAPTCHA_SECRET_KEY,
-                    "response": credentials.captcha_token
-                },
-                timeout=10
-            )
-            print(f"Google Response: {response.text}")
-            result = response.json()
-            
-            if not result.get("success"):
-                error_codes = result.get("error-codes", [])
-                print(f"Captcha Verification Failed. Error codes: {error_codes}")
-                
-                await log_event(
-                    db=db,
-                    user_id=user.id if user else None,
-                    ip=ip_address,
-                    action="CAPTCHA_FAIL",
-                    status="FAILURE",
-                    risk_score=50,
-                    details={"reason": "bot_verification_failed", "error_codes": error_codes, "user_agent": user_agent},
-                )
-                
+            # Continue without captcha verification (development mode)
+        else:
+            # Captcha is configured, require token
+            if not credentials.captcha_token:
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail={"message": "Captcha failed", "captcha_required": True}
+                    detail={"message": "Too many failed attempts", "captcha_required": True}
                 )
-        except requests.RequestException as e:
-            print(f"Captcha Request Error: {str(e)}")
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail={"message": "Captcha verification service unavailable", "captcha_required": True}
-            )
+            
+            # Verify Captcha
+            print("Verifying Captcha Token...")
+            masked_secret = RECAPTCHA_SECRET_KEY[:5] + "..." if RECAPTCHA_SECRET_KEY else "None"
+            print(f"Secret Key Loaded: {masked_secret}")
+            
+            try:
+                response = requests.post(
+                    "https://www.google.com/recaptcha/api/siteverify",
+                    data={
+                        "secret": RECAPTCHA_SECRET_KEY,
+                        "response": credentials.captcha_token
+                    },
+                    timeout=10
+                )
+                print(f"Google Response: {response.text}")
+                result = response.json()
+                
+                if not result.get("success"):
+                    error_codes = result.get("error-codes", [])
+                    print(f"Captcha Verification Failed. Error codes: {error_codes}")
+                    
+                    await log_event(
+                        db=db,
+                        user_id=user.id if user else None,
+                        ip=ip_address,
+                        action="CAPTCHA_FAIL",
+                        status="FAILURE",
+                        risk_score=50,
+                        details={"reason": "bot_verification_failed", "error_codes": error_codes, "user_agent": user_agent},
+                    )
+                    
+                    raise HTTPException(
+                        status_code=status.HTTP_401_UNAUTHORIZED,
+                        detail={"message": "Captcha failed", "captcha_required": True}
+                    )
+            except requests.RequestException as e:
+                print(f"Captcha Request Error: {str(e)}")
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail={"message": "Captcha verification service unavailable", "captcha_required": True}
+                )
 
     # Impossible Travel Logic
     # current_location and current_time defined above

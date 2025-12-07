@@ -65,8 +65,8 @@ class SecurityStatus(BaseModel):
 
 class AccessLogResponse(BaseModel):
     id: int
-    user_id: int
-    username: str
+    user_id: Optional[int] = None  # Nullable to handle failed login attempts without valid user
+    username: Optional[str] = None  # Nullable when user_id is None
     user_is_locked: bool = False
     ip_address: str
     action: str
@@ -101,6 +101,23 @@ class AccessLogResponse(BaseModel):
                  timestamp=obj.timestamp,
                  log_metadata=obj.log_metadata,
              )
+        # Handle case when user is None (failed login attempts with invalid username)
+        if hasattr(obj, "user_id") and obj.user_id is None:
+            return cls(
+                id=obj.id,
+                user_id=None,
+                username=None,
+                user_is_locked=False,
+                ip_address=obj.ip_address,
+                action=obj.action,
+                status=obj.status,
+                risk_score=obj.risk_score,
+                likelihood=obj.likelihood,
+                impact=obj.impact,
+                investigation_status=obj.investigation_status,
+                timestamp=obj.timestamp,
+                log_metadata=obj.log_metadata,
+            )
         # Fallback for dictionary or other inputs
         return super().model_validate(obj, **kwargs)
 

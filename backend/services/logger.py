@@ -10,7 +10,7 @@ from services.websocket_manager import manager
 
 async def log_event(
     db: Session,
-    user_id: int,
+    user_id: Optional[int],
     ip: str,
     action: str,
     status: str,

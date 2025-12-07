@@ -36,12 +36,14 @@ const SecurityManagement = () => {
   };
 
   const handleUnban = async (ip) => {
-      if (!window.confirm(`Unban IP ${ip}?`)) return;
+      if (!window.confirm(`Unban IP ${ip}? This will allow this IP address to access the system again.`)) return;
       try {
-          await api.post('/admin/unban-ip', { ip_address: ip });
+          const response = await api.post('/admin/unban-ip', { ip_address: ip });
+          alert(`IP ${ip} unbanned successfully.`);
           fetchData(); // Refresh
-      } catch (e) {
-          alert("Failed to unban IP.");
+      } catch (error) {
+          const errorMessage = error.response?.data?.detail || error.message || "Failed to unban IP.";
+          alert(`Failed to unban IP: ${errorMessage}`);
       }
   };
 
@@ -121,22 +123,31 @@ const SecurityManagement = () => {
                     {data.banned_ips.length === 0 ? (
                         <div className="p-8 text-center text-gray-500 dark:text-gray-400 italic">No banned IPs.</div>
                     ) : (
-                        data.banned_ips.map(ip => (
-                            <div key={ip.ip_address} className="p-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                                <div>
-                                    <p className="font-mono font-semibold text-gray-900 dark:text-gray-100">{ip.ip_address}</p>
-                                    <p className="text-xs text-red-500 dark:text-red-400 font-medium mt-1">{ip.reason}</p>
-                                    <p className="text-xs text-gray-400 mt-0.5">By: {ip.banned_by || 'System'}</p>
+                        data.banned_ips.map(ip => {
+                            const bannedDate = ip.banned_at 
+                                ? new Date(ip.banned_at).toLocaleString() 
+                                : 'Unknown';
+                            return (
+                                <div key={ip.ip_address} className="p-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                                    <div className="flex-1">
+                                        <p className="font-mono font-semibold text-gray-900 dark:text-gray-100">{ip.ip_address}</p>
+                                        <p className="text-xs text-red-500 dark:text-red-400 font-medium mt-1">{ip.reason}</p>
+                                        <div className="flex gap-3 mt-1">
+                                            <p className="text-xs text-gray-400">By: {ip.banned_by || 'System'}</p>
+                                            <p className="text-xs text-gray-400">•</p>
+                                            <p className="text-xs text-gray-400">{bannedDate}</p>
+                                        </div>
+                                    </div>
+                                    <button 
+                                        onClick={() => handleUnban(ip.ip_address)}
+                                        className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors ml-4"
+                                        title="Unban IP Address"
+                                    >
+                                        <Unlock className="h-5 w-5" />
+                                    </button>
                                 </div>
-                                <button 
-                                    onClick={() => handleUnban(ip.ip_address)}
-                                    className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                                    title="Remove Ban"
-                                >
-                                    <Trash2 className="h-5 w-5" />
-                                </button>
-                            </div>
-                        ))
+                            );
+                        })
                     )}
                 </div>
             </div>

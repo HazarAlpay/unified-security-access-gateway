@@ -63,15 +63,21 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = useCallback(async (username, password, captchaToken = null) => {
-    const payload = { username, password };
-    if (captchaToken) {
-        payload.captcha_token = captchaToken;
+    try {
+      const payload = { username, password };
+      if (captchaToken) {
+          payload.captcha_token = captchaToken;
+      }
+      const { data } = await api.post('/auth/login', payload);
+      if (data.access_token) {
+        persistSession(data.access_token, data.role);
+      }
+      return data;
+    } catch (error) {
+      // Re-throw the error so the Login component can handle it
+      // This ensures network errors and other exceptions are properly caught
+      throw error;
     }
-    const { data } = await api.post('/auth/login', payload);
-    if (data.access_token) {
-      persistSession(data.access_token, data.role);
-    }
-    return data;
   }, [persistSession]);
 
   const verifyMfa = useCallback(

@@ -20,7 +20,12 @@
 
 
 
+## 🚀 Quick Start
+
+Start here: **[SETUP.md](SETUP.md)** - Simple step-by-step installation and setup guide.
+
 ---
+
 
 
 

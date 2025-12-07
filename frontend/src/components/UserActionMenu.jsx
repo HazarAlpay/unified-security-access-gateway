@@ -33,17 +33,33 @@ const UserActionMenu = ({ username, ip, isLocked = false, onStatusChange }) => {
   };
 
   const handleBanIp = async () => {
-    if (!ip) return;
+    console.log("handleBanIp called, IP:", ip);
+    
+    if (!ip) {
+      alert("No IP address available to ban.");
+      setIsOpen(false);
+      return;
+    }
+    
     const reason = window.prompt(`Ban IP ${ip}? Enter reason:`, "Malicious Activity");
-    if (!reason) return;
+    if (!reason || reason.trim() === '') {
+      setIsOpen(false);
+      return;
+    }
 
     setLoading(true);
+    console.log("Banning IP:", ip, "Reason:", reason);
+    
     try {
-        await api.post('/admin/ban-ip', { ip_address: ip, reason });
-        alert(`IP ${ip} banned successfully.`);
+        const response = await api.post('/admin/ban-ip', { ip_address: ip, reason: reason.trim() });
+        console.log("Ban IP response:", response);
+        alert(`IP ${ip} banned successfully.\n\nReason: ${reason}\n\nYou can view and manage banned IPs in Security Management.`);
+        if (onStatusChange) onStatusChange(); // Refresh parent data
     } catch (error) {
         console.error("Failed to ban IP:", error);
-        alert("Failed to ban IP.");
+        console.error("Error response:", error.response);
+        const errorMessage = error.response?.data?.detail || error.message || "Failed to ban IP.";
+        alert(`Failed to ban IP: ${errorMessage}`);
     } finally {
         setLoading(false);
         setIsOpen(false);
@@ -93,12 +109,22 @@ const UserActionMenu = ({ username, ip, isLocked = false, onStatusChange }) => {
                 {isLocked ? 'Unlock Account' : 'Block Account'}
               </button>
               <button
-                onClick={handleBanIp}
-                disabled={loading}
-                className="flex w-full items-center px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  console.log("Ban IP button clicked, IP:", ip);
+                  handleBanIp();
+                }}
+                disabled={loading || !ip}
+                className={`flex w-full items-center px-4 py-2 text-sm ${
+                  !ip 
+                    ? 'text-gray-400 dark:text-gray-500 cursor-not-allowed' 
+                    : 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20'
+                }`}
+                title={!ip ? "No IP address available" : `Ban this IP address: ${ip || 'N/A'}`}
               >
                 <Ban className="mr-2 h-4 w-4" />
-                Ban IP Address
+                Ban IP Address {!ip && "(No IP)"}
               </button>
             </div>
           </div>

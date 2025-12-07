@@ -51,7 +51,7 @@ class AccessLog(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     timestamp = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # Nullable to allow logging failed login attempts without valid user
     ip_address = Column(String(45), nullable=False)
     country = Column(String(60))
     action = Column(String(50), nullable=False)
@@ -106,4 +106,6 @@ class SecurityRule(Base):
     action = Column(String(20), nullable=False)  # 'BLOCK', 'MFA', 'ALERT'
     is_active = Column(Boolean, default=True)
     severity = Column(Integer, default=0)
+    rule_likelihood = Column(Integer, default=3, nullable=False)  # NIST Likelihood (1-5)
+    rule_impact = Column(Integer, default=3, nullable=False)  # NIST Impact (1-5)
 

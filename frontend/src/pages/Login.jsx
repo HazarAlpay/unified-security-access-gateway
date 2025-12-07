@@ -29,6 +29,11 @@ const Login = () => {
   
   const [captchaRequired, setCaptchaRequired] = useState(false);
   const [captchaToken, setCaptchaToken] = useState(null);
+  const [captchaError, setCaptchaError] = useState(false);
+  
+  // Check if ReCAPTCHA site key is configured
+  const recaptchaSiteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
+  const isCaptchaConfigured = recaptchaSiteKey && recaptchaSiteKey.trim() !== '';
 
   useEffect(() => {
     if (searchParams.get('expired') === 'true') {
@@ -94,9 +99,20 @@ const Login = () => {
       }
     } catch (err) {
       console.log("Login Error Response:", err.response?.data);
+      console.error("Login Error:", err);
       
       let message = 'Unable to start login.';
-      if (err.response?.data?.detail) {
+      
+      // Handle network errors
+      if (!err.response) {
+        if (err.code === 'ECONNABORTED' || err.message?.includes('timeout')) {
+          message = 'Request timed out. Please check your connection and try again.';
+        } else if (err.message?.includes('Network Error') || err.message?.includes('Failed to fetch')) {
+          message = 'Network error. Please check your connection and try again.';
+        } else {
+          message = err.message || 'Network error. Please try again.';
+        }
+      } else if (err.response?.data?.detail) {
           if (typeof err.response.data.detail === 'string') {
               message = err.response.data.detail;
           } else if (err.response.data.detail.message) {
@@ -214,7 +230,7 @@ const Login = () => {
 
             <button
               type="submit"
-              disabled={loading || (captchaRequired && !captchaToken)}
+              disabled={loading || (captchaRequired && isCaptchaConfigured && !captchaToken)}
               className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-200 disabled:opacity-50"
             >
               {loading ? 'Verifying...' : 'Sign In'}
@@ -225,11 +241,36 @@ const Login = () => {
                     <p className="text-xs text-red-600 mb-2 font-semibold text-center">
                         Too many failed attempts. Please verify you are human.
                     </p>
-                    <ReCAPTCHA
-                        ref={recaptchaRef}
-                        sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
-                        onChange={(val) => setCaptchaToken(val)}
-                    />
+                    {isCaptchaConfigured ? (
+                        <ReCAPTCHA
+                            ref={recaptchaRef}
+                            sitekey={recaptchaSiteKey}
+                            onChange={(val) => {
+                                setCaptchaToken(val);
+                                setCaptchaError(false);
+                            }}
+                            onErrored={() => {
+                                setCaptchaError(true);
+                                setError('Failed to load captcha. Please refresh the page.');
+                            }}
+                            onExpired={() => {
+                                setCaptchaToken(null);
+                                if (recaptchaRef.current) {
+                                    recaptchaRef.current.reset();
+                                }
+                            }}
+                        />
+                    ) : (
+                        <div className="p-3 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-800 text-center max-w-xs">
+                            <p className="font-semibold mb-1">⚠️ Captcha Not Configured</p>
+                            <p>ReCAPTCHA site key is missing. For development, login will proceed without verification.</p>
+                        </div>
+                    )}
+                    {captchaError && (
+                        <p className="text-xs text-red-600 mt-2 text-center">
+                            Captcha failed to load. Please refresh the page.
+                        </p>
+                    )}
                 </div>
             )}
           </form>

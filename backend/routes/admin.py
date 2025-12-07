@@ -13,6 +13,11 @@ router = APIRouter(tags=["admin"])
 
 
 def get_current_admin(user: User = Depends(get_current_user)) -> User:
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication required. Please log in.",
+        )
     if user.role != RoleEnum.ADMIN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -105,7 +110,7 @@ def get_security_status(
         {
             "ip_address": ip.ip_address,
             "reason": ip.reason,
-            "banned_at": ip.banned_at,
+            "banned_at": ip.banned_at.isoformat() if ip.banned_at else None,
             "banned_by": ip.banned_by
         }
         for ip in banned_ips_db

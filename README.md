@@ -16,7 +16,7 @@
 
 
 
-> **A Next-Gen Identity & Access Management (IAM) and Mini-SIEM platform that enforces Zero Trust principles using Adaptive Auth, Real-time Threat Visualization, and AI-driven Policy Enforcement.**
+> **Identity & Access Management (IAM) and Mini-SIEM platform that enforces Zero Trust principles using Adaptive Auth, Real-time Threat Visualization, and AI-driven Policy Enforcement.**
 
 
 
